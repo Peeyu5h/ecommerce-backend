@@ -12,7 +12,7 @@ const authMiddleware = (req, res, next) => {
             return res.status(403).json({message: "Invalid or expired token"});
         }
 
-        const existingUser = await User.findById(decodedPayload.id).select("-password -isAdmin -__v");
+        const existingUser = await User.findById(decodedPayload.id).select("-password -__v");
 
         if(!existingUser){
             return res.status(401).json({
