@@ -35,11 +35,14 @@ const productSchema = new mongoose.Schema({
         required: true
     },
     category: {
-        type: String,
-        required: true,
-        trim: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        required: true
     }
-}, {timestamps: true});
+},
+    { timestamps: true },
+    { strictPopulate: false}
+);
 
 const Product = mongoose.model('Product', productSchema);
 

@@ -1,7 +1,17 @@
+import mongoose from "mongoose";
+import Category from "../models/category.model.js";
 import Product from "../models/product.model.js"
 
 export const createProduct = async (req, res)=> {
     try {
+        const categoryId = req.body.category;
+
+        const existingProductCategory = await Category.findById(categoryId);
+        if(!existingProductCategory){
+            return res.status(404).json({
+                message: `Category with ID ${categoryId} not found!`
+            });
+        }
         const newProduct = new Product(req.body);
         const createdProduct = await newProduct.save();
 
@@ -28,7 +38,41 @@ export const createProduct = async (req, res)=> {
 
 export const getAllProduct = async (req, res) => {
     try {
-        const allProducts = await Product.find({});
+        const {search, category, sort, inStock, order} = req.query;
+
+        const filter = {};
+        const sortedObject = {};
+
+        const allowedSortFields = [
+            "price",
+            "rating",
+            "createdAt",
+            "name"
+        ];
+
+        if(search){
+            filter.name = { $regex: search, $options: 'i'};
+        }
+
+        if(category){
+            if(!mongoose.isValidObjectId(category)){  
+                return res.status(401).json({
+                    message: "Invalid category Id"
+                });
+            }
+            filter.category = category;
+        }
+
+        if(inStock && (inStock === "true" || inStock === "false")){
+            filter.stock = inStock === "true" ? { $gt: 1} : { $lt: 1 };
+        }
+
+        if(sort && allowedSortFields.includes(sort)){
+            sortedObject[sort] =  order === 'desc' ? -1 : 1;
+        }
+       
+        const allProducts = await Product.find(filter).populate('category').sort(sortedObject);
+
 
         res.status(200).json({
             message: `Product received successfully! Total Products: ${allProducts.length} `,
@@ -45,7 +89,7 @@ export const getAllProduct = async (req, res) => {
 export const getProductById = async (req, res) => {
     try {
         const productId = req.params.id;
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('category');
 
         if(!product){
             return res.status(404).json({
@@ -72,7 +116,7 @@ export const updateProductById = async (req, res) => {
             req.params.id,
             { $set: payload },
             { returnDocument: "after" }
-        );
+        ).populate('category');
 
         if(!updatedProduct){
             return res.status(404).json({
