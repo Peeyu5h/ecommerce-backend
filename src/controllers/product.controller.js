@@ -38,17 +38,16 @@ export const createProduct = async (req, res)=> {
 
 export const getAllProduct = async (req, res) => {
     try {
-        const {search, category, sort, inStock, order} = req.query;
+        const {search, category, sort, inStock, order, page = 1, limit=10} = req.query;
 
         const filter = {};
         const sortedObject = {};
 
-        const allowedSortFields = [
-            "price",
-            "rating",
-            "createdAt",
-            "name"
-        ];
+        const allowedSortFields = ["price", "rating", "createdAt", "name"];
+
+        const pageNum = parseInt(page, 10);
+        const limitNum = parseInt(limit, 10);
+        const skip = (pageNum - 1) * limitNum;
 
         if(search){
             filter.name = { $regex: search, $options: 'i'};
@@ -70,13 +69,24 @@ export const getAllProduct = async (req, res) => {
         if(sort && allowedSortFields.includes(sort)){
             sortedObject[sort] =  order === 'desc' ? -1 : 1;
         }
-       
-        const allProducts = await Product.find(filter).populate('category').sort(sortedObject);
+
+        let allProducts;
+
+        if(Object.keys(sortedObject).length){
+            allProducts = await Product.find(filter).populate('category').sort(sortedObject).skip(skip).limit(limitNum);
+        }else{
+            allProducts = await Product.find(filter).populate('category').skip(skip).limit(limitNum);
+        }
+
+        const totalProductsCount = await Product.countDocuments(filter);
 
 
         res.status(200).json({
             message: `Product received successfully! Total Products: ${allProducts.length} `,
-            allProducts
+            allProducts,
+            currentPage: pageNum,
+            totalPage: Math.ceil(totalProductsCount / limitNum),
+            totalProductsCount
         });
 
     } catch (error) {
