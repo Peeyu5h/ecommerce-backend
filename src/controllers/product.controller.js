@@ -45,6 +45,12 @@ export const getAllProduct = async (req, res) => {
 
         const allowedSortFields = ["price", "rating", "createdAt", "name"];
 
+        if(page < 1 || limit < 1){
+            return res.status(404).json({
+                message: "Invalid page number or limit"
+            });
+        }
+
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
         const skip = (pageNum - 1) * limitNum;
@@ -70,13 +76,13 @@ export const getAllProduct = async (req, res) => {
             sortedObject[sort] =  order === 'desc' ? -1 : 1;
         }
 
-        let allProducts;
+        let query = Product.find(filter).populate('category').skip(skip).limit(limitNum);
 
         if(Object.keys(sortedObject).length){
-            allProducts = await Product.find(filter).populate('category').sort(sortedObject).skip(skip).limit(limitNum);
-        }else{
-            allProducts = await Product.find(filter).populate('category').skip(skip).limit(limitNum);
+            query = query.sort(sortedObject);
         }
+
+        const allProducts = await query;
 
         const totalProductsCount = await Product.countDocuments(filter);
 
