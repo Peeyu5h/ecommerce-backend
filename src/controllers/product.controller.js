@@ -167,7 +167,6 @@ export const deleteProductById = async (req, res) => {
         });
 
     } catch (error) {
-        console.log("Inside error of deleteProduct")
         return res.status(500).json({
             message: error.message
         });
