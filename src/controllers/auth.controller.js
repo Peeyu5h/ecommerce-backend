@@ -65,12 +65,14 @@ export const loginUser = async (req, res) => {
 
         if(!isMatch) return res.status(401).json({ message: "Invalid email or password"});
 
-        const payload = {
-            id: existingUser._id
+        const user = {
+            id: existingUser._id,
+            name: existingUser.name,
+            email: existingUser.email
         }
 
         const token = jwt.sign(
-            payload,
+            user,
             process.env.JWT_SECRET,
             {expiresIn: '1h'}
         );
@@ -78,7 +80,7 @@ export const loginUser = async (req, res) => {
         return res.status(200).json({
             message: "Authentication successful!.",
             token: token,
-            payload
+            user
         });
 
 

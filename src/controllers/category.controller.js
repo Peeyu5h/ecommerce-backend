@@ -27,7 +27,7 @@ export const createCategory = async(req, res) => {
 
 export const getAllCategory = async(req, res) => {
     try {
-        const allCategory = await Category.find({ });
+        const allCategory = await Category.find({ }).select("-createdAt -updatedAt -__v");
 
         res.status(200).json({
             message: `Categories received successfully! Total Categories: ${allCategory.length} `,

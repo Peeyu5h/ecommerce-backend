@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Category from "../models/category.model.js";
 import Product from "../models/product.model.js"
+import { serializeProduct } from "../utils/serealize.product.js";
 
 export const createProduct = async (req, res)=> {
     try {
@@ -38,7 +39,7 @@ export const createProduct = async (req, res)=> {
 
 export const getAllProduct = async (req, res) => {
     try {
-        const {search, category, sort, inStock, order, page = 1, limit=10} = req.query;
+        const {search, category, sort, inStock, order, page = 1, limit=19} = req.query;
 
         const filter = {};
         const sortedObject = {};
@@ -82,13 +83,14 @@ export const getAllProduct = async (req, res) => {
             query = query.sort(sortedObject);
         }
 
-        const allProducts = await query;
+        let allProducts = await query;
 
         const totalProductsCount = await Product.countDocuments(filter);
 
+        allProducts = serializeProduct(allProducts);
 
         res.status(200).json({
-            message: `Product received successfully! Total Products: ${allProducts.length} `,
+            message: `Product received successfully! Total Products: ${allProducts?.length} `,
             allProducts,
             currentPage: pageNum,
             totalPage: Math.ceil(totalProductsCount / limitNum),
@@ -105,7 +107,7 @@ export const getAllProduct = async (req, res) => {
 export const getProductById = async (req, res) => {
     try {
         const productId = req.params.id;
-        const product = await Product.findById(productId).populate('category');
+        const product = await Product.findById(productId).populate('category').select("-createdAt -updatedAt -__v");
 
         if(!product){
             return res.status(404).json({

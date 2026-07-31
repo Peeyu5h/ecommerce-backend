@@ -28,7 +28,7 @@ export const addToCart = async (req, res) => {
             { userId, "items.product": productId},
             { $inc: { "items.$.quantity": quantity } },
             { returnDocument: "after" }
-        ).populate("items.product");
+        ).populate('items.product', '-__v -createdAt -updatedAt -reviewCount -rating -description -category').select('-__v -createdAt -updatedAt -userId');
 
         if(cart){
             return res.status(200).json({
@@ -41,7 +41,7 @@ export const addToCart = async (req, res) => {
             { userId },
             { $push: { items : { product : productId, quantity } } },
             { upsert: true, returnDocument: "after" }
-        );
+        ).populate('items.product', '-__v -createdAt -updatedAt -reviewCount -rating -description -category').select('-__v -createdAt -updatedAt -userId');
 
         return res.status(201).json({
             message: `${quantity} Item added to cart successfully!`,
@@ -58,7 +58,7 @@ export const addToCart = async (req, res) => {
 export const getCartItem = async (req, res) => {
     try {
         const userId = req.user._id;
-        const cartItems = await Cart.findOne({userId}).populate('items.product');
+        const cartItems = await Cart.findOne({userId}).populate('items.product', '-__v -createdAt -updatedAt -reviewCount -rating -description -category');
 
         res.status(200).json({
             message: `Cart product reveived successfully! Total: ${cartItems?.items.length ?? 0}`,
@@ -80,7 +80,7 @@ export const removeCartItem = async (req, res) => {
             { userId },
             { $pull: { items: { _id: cartItemId } } },
             { returnDocument: "after" }
-        );
+        ).populate('items.product', '-__v -createdAt -updatedAt -reviewCount -rating -description -category').select('-__v -createdAt -updatedAt -userId');
 
         if(!removedCartItem){
             if(removedCartItem.items.length === 0){
@@ -93,7 +93,7 @@ export const removeCartItem = async (req, res) => {
         }
         res.status(200).json({
             message: "Cart Item removed successfully!",
-            removedCartItem
+            cartItemsList: removedCartItem
         });
     } catch (error) {
         return res.status(500).json({
@@ -153,7 +153,7 @@ export const updateCartItems = async(req, res) => {
             { userId, "items._id": cartItemId },
             { $set: { "items.$.quantity": quantity } },
             { returnDocument : "after" }
-        ).populate("items.product");
+        ).populate("items.product", "-__v -createdAt -updatedAt -description -rating -reviewCount -category").select("-updatedAt -createdAt -__v -userId");
 
         if(!updatedCart){
             return res.status(404).json({
