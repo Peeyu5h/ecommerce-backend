@@ -82,8 +82,8 @@ export const createOrder = async (req, res) => {
             [{
                 userId,
                 items: orderItems,
-                totalAmount,
-                status: "pending"
+                totalAmount: totalAmount + Math.round(0.18 * totalAmount),
+                status: "delivered"
             }],
             { session }
         );
@@ -116,10 +116,12 @@ export const createOrder = async (req, res) => {
         // Commit everything
         await session.commitTransaction();
 
+        const newCreatedOrder = {userId: createdOrder.userId, items: createdOrder.items, totalAmount: createdOrder.totalAmount, status: createdOrder.status}
+
         // 11. Return created order
         return res.status(201).json({
             message: "Order created successfully.",
-            order: createdOrder
+            order: newCreatedOrder
         });
 
     } catch (error) {
@@ -132,5 +134,28 @@ export const createOrder = async (req, res) => {
 
     } finally {
         session.endSession();
+    }
+};
+
+
+export const getMyOrders = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const orders = await Order.find({ userId })
+            .sort({ createdAt: -1 }).select('-createdAt -__v');
+
+        return res.status(200).json({
+            message: "Orders fetched successfully.",
+            orders
+        });
+
+    } catch (error) {
+        console.error("Get orders error:", error);
+
+        return res.status(500).json({
+            message: "Failed to fetch orders.",
+            error: error.message
+        });
     }
 };
